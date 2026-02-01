@@ -1,9 +1,8 @@
 name: CD
 
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [released]
   pull_request:
     branches:
       - release-please--
@@ -166,7 +165,7 @@ jobs:
         with:
           subject-path: "wheels-*/*"
       - name: Publish to PyPI
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        if: ${{ github.event_name == 'release' }}
         uses: PyO3/maturin-action@v1
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
