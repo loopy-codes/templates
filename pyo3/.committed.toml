@@ -14,10 +14,12 @@ allowed_types = [
     "docs",
     "style",
     "refactor",
+    "revert",
     "perf",
     "test",
 ]
 allowed_scopes = [
+    "actions",
     "release",
 ]
 merge_commit = false

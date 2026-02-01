@@ -4,8 +4,11 @@ on:
   release:
     types: [released]
   pull_request:
+    types:
+      - review_requested
+      - ready_for_review
     branches:
-      - release-please--
+      - main
   workflow_dispatch:
 
 permissions:
@@ -20,8 +23,6 @@ jobs:
           - runner: ubuntu-22.04
             target: x86_64
           - runner: ubuntu-22.04
-            target: x86
-          - runner: ubuntu-22.04
             target: aarch64
           - runner: ubuntu-22.04
             target: armv7
@@ -31,15 +32,21 @@ jobs:
             target: ppc64le
     steps:
       - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: true
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version-file: ".python-version"
+      - name: Build and compile project
+        run: cargo test --workspace --no-run
+      - name: Run tests
+        run: cargo test --workspace
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -55,22 +62,26 @@ jobs:
           - runner: ubuntu-22.04
             target: x86_64
           - runner: ubuntu-22.04
-            target: x86
-          - runner: ubuntu-22.04
             target: aarch64
           - runner: ubuntu-22.04
             target: armv7
     steps:
       - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: true
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - name: Build and compile project
+        run: cargo test --workspace --no-run
+      - name: Run tests
+        run: cargo test --workspace
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -85,20 +96,24 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-          - runner: windows-latest
-            target: x86
     steps:
       - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: true
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
+      - name: Build and compile project
+        run: cargo test --workspace --no-run
+      - name: Run tests
+        run: cargo test --workspace
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -110,21 +125,25 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: macos-13
-            target: x86_64
           - runner: macos-14
             target: aarch64
     steps:
       - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: true
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      - name: Build and compile project
+        run: cargo test --workspace --no-run
+      - name: Run tests
+        run: cargo test --workspace
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -149,7 +168,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ github.event_name == 'release' }}
     needs: [linux, musllinux, windows, macos, sdist]
     permissions:
       # Use to sign the release artifacts
@@ -165,7 +184,6 @@ jobs:
         with:
           subject-path: "wheels-*/*"
       - name: Publish to PyPI
-        if: ${{ github.event_name == 'release' }}
         uses: PyO3/maturin-action@v1
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
