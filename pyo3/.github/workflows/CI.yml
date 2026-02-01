@@ -8,6 +8,7 @@ on:
     types:
       - review_requested
       - ready_for_review
+      - synchronize
   workflow_dispatch:
 
 permissions:
@@ -21,10 +22,6 @@ jobs:
         platform:
           - runner: ubuntu-24.04
             target: x86_64
-          - runner: windows-2025
-            target: x64
-          - runner: macos-15
-            target: aarch64
 
     steps:
       - uses: actions/checkout@v6
@@ -64,9 +61,9 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          sccache: true
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-macos-${{ matrix.platform.target }}
+          name: wheels-${{ matrix.platform.target }}
           path: dist
