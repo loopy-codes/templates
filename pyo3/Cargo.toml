@@ -1,0 +1,17 @@
+[workspace]
+resolver = "3"
+members = [
+    ".",
+    "xtask",
+    # "crates/*"
+]
+
+[workspace.package]
+edition = "2024"
+publish = true
+
+[workspace.dependencies]
+pyo3 = "0.27.0"
+clap = { version = "4.5.56", features = ["derive"] }
+cargo_metadata = "0.23.1"
+toml_edit = "0.22"
